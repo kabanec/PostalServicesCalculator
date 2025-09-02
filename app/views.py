@@ -12,7 +12,7 @@ import base64
 main = Blueprint("main", __name__)
 
 # API configuration
-API_BASE_URL = os.getenv("API_URL", "https://info.dev.3ceonline.com/ccce/apis/tradedata/import/v1/schedule")
+API_BASE_URL = os.getenv("API_URL", "https://info.dev.3ceonline.com/ccce/apis")
 API_TOKEN = os.getenv("API_TOKEN", "your_token_here")
 AVALARA_USERNAME = os.getenv("AVALARA_USERNAME")
 AVALARA_PASSWORD = os.getenv("AVALARA_PASSWORD")
@@ -34,10 +34,6 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         request_id = str(uuid.uuid4())
-        # Bypass authentication for HEAD requests (e.g., Render health checks)
-        if request.method == 'HEAD':
-            logger.debug(f"[{request_id}] Allowing HEAD request without authentication")
-            return f(*args, **kwargs)
         auth = request.authorization
         logger.debug(f"[{request_id}] Authorization header: {auth}")
         if not auth:
@@ -48,6 +44,7 @@ def auth_required(f):
             return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
         logger.debug(f"[{request_id}] Authentication successful")
         return f(*args, **kwargs)
+
     return decorated
 
 
@@ -76,6 +73,7 @@ def fetch_hs_code():
     data = request.get_json()
     description = data.get("description")
     coo = data.get("coo")
+    verify_description = data.get("verify_description", False)
     debug_info = f"Request data: {data}\n"
 
     if not description or not coo:
@@ -83,16 +81,89 @@ def fetch_hs_code():
         return jsonify({"error": "Description and COO are required", "debug": debug_info}), 400
 
     try:
-        headers = {
+        # Step 1: Call 3CEOnline classification API to get HS6 code
+        classify_url = f"{API_BASE_URL}/classify/v1/interactive/classify-start"
+        classify_headers = {
+            "Authorization": f"Bearer {API_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        classify_payload = {
+            "proddesc": description
+        }
+
+        logger.debug(f"Sending 3CEOnline classification request to {classify_url} with payload: {classify_payload}")
+        classify_response = requests.post(classify_url, headers=classify_headers, json=classify_payload, timeout=10)
+
+        logger.debug(f"Classification response status: {classify_response.status_code}")
+        logger.debug(f"Classification response text: {classify_response.text}")
+
+        if classify_response.status_code != 200:
+            debug_info += f"3CEOnline classification API error ({classify_response.status_code}): {classify_response.text}\n"
+            return jsonify({"error": f"Classification API error: {classify_response.text}", "debug": debug_info}), 500
+
+        classify_json = classify_response.json()
+        debug_info += f"3CEOnline Classification API Response: {classify_json}\n"
+
+        # Extract HS6 code from classification response
+        hs6_code = None
+        requires_interaction = False
+
+        if classify_json.get('data'):
+            data = classify_json['data']
+            hs6_code_raw = data.get('hsCode', '')
+
+            # Check if there's a current question that needs answering
+            current_question = data.get('currentQuestionInteraction')
+            if current_question and not hs6_code_raw:
+                requires_interaction = True
+                debug_info += f"3CEOnline requires additional classification questions. Current question: {current_question.get('name', 'unknown')}\n"
+
+            # Only use the HS code if it's not empty
+            if hs6_code_raw and hs6_code_raw.strip():
+                hs6_code = str(hs6_code_raw)
+                logger.debug(f"Successfully extracted HS6 code from classification: {hs6_code}")
+
+        if not hs6_code:
+            debug_info += f"No HS6 code found in 3CEOnline classification response. Raw hsCode value: '{classify_json.get('data', {}).get('hsCode', 'N/A')}'\n"
+
+            # Check if this is because interactive classification is needed
+            if requires_interaction:
+                debug_info += "Classification requires answering additional questions in 3CEOnline interactive system.\n"
+
+            # If verification is enabled and no HS code found, return verification failure
+            if verify_description:
+                logger.debug(f"Verification enabled and no HS6 code found for description: '{description}'")
+                return jsonify({
+                    "verification_failed": True,
+                    "error": "Description insufficient for classification - may require more specific details or interactive classification",
+                    "debug": debug_info
+                }), 200
+            else:
+                # Verification disabled: proceed to Avalara API with description only (no HS6 code)
+                logger.debug(
+                    f"No HS6 code from 3CEOnline, but verification disabled. Proceeding to Avalara with description only.")
+                debug_info += "Proceeding to Avalara quoting API with description only (no HS6 code from classification).\n"
+
+        # Step 2: Call Avalara API (either with HS6 code from classification, or with description only)
+        avalara_headers = {
             "Authorization": "Basic " + base64.b64encode(f"{AVALARA_USERNAME}:{AVALARA_PASSWORD}".encode()).decode(),
             "Content-Type": "application/json"
         }
-        payload = {
+
+        # Build classification parameters - include HS6 code only if we have one
+        classification_params = [{"name": "price", "value": "100", "unit": "USD"}]
+        if hs6_code:
+            classification_params.append({"name": "hs_code", "value": hs6_code})
+            debug_info += f"Adding HS6 code {hs6_code} to Avalara request.\n"
+        else:
+            debug_info += "No HS6 code available - Avalara will classify based on description only.\n"
+
+        avalara_payload = {
             "id": "classification-request",
             "companyId": int(COMPANY_ID),
             "currency": "USD",
             "sellerCode": "SC8104341",
-            "shipFrom": {"country": "GB"},
+            "shipFrom": {"country": coo},
             "destinations": [{"shipTo": {"country": "US", "region": "MA"}}],
             "lines": [{
                 "lineNumber": 1,
@@ -101,10 +172,10 @@ def fetch_hs_code():
                     "itemCode": "1",
                     "description": description,
                     "itemGroup": "General",
-                    "classificationParameters": [{"name": "price", "value": "100", "unit": "USD"}],
+                    "classificationParameters": classification_params,
                     "parameters": []
                 },
-                "classificationParameters": [{"name": "price", "value": "100", "unit": "USD"}]
+                "classificationParameters": classification_params
             }],
             "type": "QUOTE_MAXIMUM",
             "disableCalculationSummary": False,
@@ -112,18 +183,27 @@ def fetch_hs_code():
             "program": "Regular"
         }
 
-        logger.debug(f"Sending request to {AVALARA_API_URL} with payload: {payload}")
-        response = requests.post(AVALARA_API_URL, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-        json_response = response.json()
-        debug_info += f"API Response: {json_response}\n"
+        logger.debug(f"Sending Avalara request to {AVALARA_API_URL} with payload: {avalara_payload}")
+        avalara_response = requests.post(AVALARA_API_URL, headers=avalara_headers, json=avalara_payload, timeout=10)
+        avalara_response.raise_for_status()
+        avalara_json = avalara_response.json()
+        debug_info += f"Avalara API Response: {avalara_json}\n"
 
-        hs = json_response.get('globalCompliance', [{}])[0].get('quote', {}).get('lines', [{}])[0].get('hsCode')
-        if hs:
-            return jsonify({"hs_code": hs})
+        # Extract HS code from Avalara response
+        hs_code = avalara_json.get('globalCompliance', [{}])[0].get('quote', {}).get('lines', [{}])[0].get('hsCode')
+
+        if hs_code:
+            logger.debug(f"Successfully extracted final HS code from Avalara: {hs_code}")
+            return jsonify({"hs_code": hs_code, "debug": debug_info})
+        elif hs6_code:
+            # Fallback to classified HS6 code if Avalara doesn't provide one
+            logger.debug(f"No HS code from Avalara, using classified HS6: {hs6_code}")
+            return jsonify({"hs_code": hs6_code, "debug": debug_info})
         else:
-            debug_info += "No HS code found in response.\n"
-            return jsonify({"error": "No HS code found", "debug": debug_info}), 500
+            # Neither 3CEOnline nor Avalara provided an HS code
+            debug_info += "Neither 3CEOnline classification nor Avalara quoting provided an HS code.\n"
+            return jsonify(
+                {"error": "No HS code found from either classification or quoting API", "debug": debug_info}), 500
 
     except requests.RequestException as e:
         debug_info += f"Network error: {str(e)}\nResponse text: {getattr(e.response, 'text', 'No response')}\n"
@@ -137,6 +217,8 @@ def fetch_hs_code():
 
 # Embedded fetch_stackable_codes logic
 def fetch_stackable_codes(hs_code, origin, destination, request_id):
+    debug_info = f"fetch_stackable_codes called with hs_code: {hs_code}, origin: {origin}, destination: {destination}\n"
+
     if not hs_code or not origin or not destination:
         return {"success": False, "error": "HS Code, Origin, and Destination are required"}, 400
 
@@ -151,13 +233,15 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
         return {"success": False, "error": "Invalid HS Code format"}, 400
 
     if not re.match(r'^[A-Z]{2}$', origin) or not re.match(r'^[A-Z]{2}$', destination):
-        return {"success": False, "error": "Origin and Destination must be 2-letter ISO country codes"}, 400
+        debug_info += "Invalid country code format.\n"
+        return {"success": False, "error": "Origin and Destination must be 2-letter ISO country codes",
+                "debug": debug_info}, 400
 
     # Truncate HS code to first 6 digits for the API call
     hs_code_for_api = hs_code[:6] if len(hs_code) >= 6 else hs_code
 
-    api_url = f"{API_BASE_URL}/{hs_code_for_api}/{origin}/{destination}"
-    logger.debug(f"[{request_id}] Calling API with truncated HS code: {api_url} (original: {hs_code})")
+    api_url = f"{API_BASE_URL}/tradedata/import/v1/schedule/{hs_code_for_api}/{origin}/{destination}"
+    logger.debug(f"[{request_id}] Calling stackable codes API with truncated HS code: {api_url} (original: {hs_code})")
 
     headers = {
         "Authorization": f"Bearer {API_TOKEN}",
@@ -169,6 +253,7 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
         if response.status_code == 200:
             logger.debug(f"[{request_id}] GET request successful")
             response_data = response.json()
+            debug_info += f"3CEOnline API Response for stackable codes: {response_data}\n"
         else:
             logger.error(f"[{request_id}] GET request failed: {response.status_code} - {response.text}")
             return {"success": False, "error": f"API request failed: {response.text}"}, response.status_code
@@ -226,7 +311,7 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
 
                 logger.debug(f"[{request_id}] Processing HS code: {code} with duties: {list(duties.keys())}")
 
-                # First, extract General rate for fallback
+                # First, extract General rate for fallback and conditional logic
                 if 'General' in duties:
                     general_rate_str = duties['General'].get('rate', '')
                     general_percentages = re.findall(r'(\d+(?:\.\d+)?)%', general_rate_str)
@@ -234,13 +319,77 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
                         general_rate = float(general_percentages[0])
                         logger.debug(f"[{request_id}] Found General rate: {general_rate}%")
 
-                # Process each duty except 'General'
+                # Handle conditional General rate duties first
+                conditional_duty_applied = False
+                conditional_rate = 0.0
+                conditional_duty_info = None
+
+                # Look for conditional duties and determine which one applies
+                for duty_name, duty_info in duties.items():
+                    rate_str = duty_info.get('rate', '')
+
+                    if 'if General' in rate_str or 'Apply General' in rate_str:
+                        logger.debug(f"[{request_id}] Found conditional General rate logic: {rate_str}")
+
+                        # Parse conditional logic for rates like "15% if General (rate) <15%"
+                        if_general_less_match = re.search(r'(\d+(?:\.\d+)?)%\s+if\s+General.*?<\s*(\d+(?:\.\d+)?)%',
+                                                          rate_str)
+                        # Parse conditional logic for rates like "Apply General (rate) if General (rate) ≥15%"
+                        apply_general_match = re.search(r'Apply General.*?≥\s*(\d+(?:\.\d+)?)%', rate_str)
+
+                        if if_general_less_match:
+                            fixed_rate = float(if_general_less_match.group(1))
+                            threshold = float(if_general_less_match.group(2))
+
+                            if general_rate < threshold:
+                                conditional_rate = fixed_rate
+                                conditional_duty_info = {
+                                    'name': duty_name,
+                                    'info': duty_info,
+                                    'desc': f"{duty_info.get('longName', duty_name)} (Applied {fixed_rate}% because General rate {general_rate}% < {threshold}%)"
+                                }
+                                conditional_duty_applied = True
+                                logger.debug(
+                                    f"[{request_id}] Conditional logic: General rate {general_rate}% < {threshold}%, applying {fixed_rate}%")
+                                break  # Stop processing other conditional duties
+
+                        elif apply_general_match:
+                            threshold = float(apply_general_match.group(1))
+
+                            if general_rate >= threshold:
+                                conditional_rate = general_rate
+                                conditional_duty_info = {
+                                    'name': duty_name,
+                                    'info': duty_info,
+                                    'desc': f"{duty_info.get('longName', duty_name)} (Applied General rate {general_rate}% because it is ≥ {threshold}%)"
+                                }
+                                conditional_duty_applied = True
+                                logger.debug(
+                                    f"[{request_id}] Conditional logic: General rate {general_rate}% ≥ {threshold}%, applying General rate")
+                                break  # Stop processing other conditional duties
+
+                # Add the applicable conditional duty to parsed_duties
+                if conditional_duty_applied:
+                    duty_name = conditional_duty_info['name']
+                    duty_info = conditional_duty_info['info']
+                    desc = conditional_duty_info['desc']
+
+                    # Extract Chapter 99 code
+                    chapter_99_match = re.search(r'9903\.\d{2}\.\d{2}(?:/\d+)?', duty_name)
+                    code_to_use = chapter_99_match.group(0) if chapter_99_match else duty_name
+
+                    parsed_duties[duty_name] = {
+                        'code': code_to_use,
+                        'desc': desc,
+                        'dutyRate': f"{conditional_rate}%"
+                    }
+                    total_punitive_rate += conditional_rate
+
+                    logger.debug(f"[{request_id}] Applied conditional duty: {duty_name}, rate: {conditional_rate}%")
+
+                # Process remaining non-conditional duties
                 for duty_name, duty_info in duties.items():
                     logger.debug(f"[{request_id}] Processing duty: {duty_name}")
-
-                    if duty_name.lower() == 'general':
-                        logger.debug(f"[{request_id}] Skipping general duty: {duty_name}")
-                        continue
 
                     rate_str = duty_info.get('rate', '')
                     logger.debug(f"[{request_id}] Raw rate string: '{rate_str}'")
@@ -249,6 +398,12 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
                         logger.debug(f"[{request_id}] No rate found for duty: {duty_name}")
                         continue
 
+                    # Skip conditional duties (already processed) and General duty
+                    if 'if General' in rate_str or 'Apply General' in rate_str or duty_name.lower() == 'general':
+                        logger.debug(f"[{request_id}] Skipping conditional or general duty: {duty_name}")
+                        continue
+
+                    # Standard processing for non-conditional rates
                     # Extract all percentage values from the rate string
                     percentages = re.findall(r'(\d+(?:\.\d+)?)%', rate_str)
                     logger.debug(f"[{request_id}] Extracted percentages from '{rate_str}': {percentages}")
@@ -259,6 +414,8 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
 
                     # Sum all percentage values for this duty
                     duty_rate = sum(float(p) for p in percentages)
+                    desc = duty_info.get('longName', duty_name)
+
                     logger.debug(f"[{request_id}] Calculated total duty rate: {duty_rate}% for {duty_name}")
 
                     if duty_rate > 0:
@@ -271,7 +428,7 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
 
                         parsed_duties[duty_name] = {
                             'code': code_to_use,
-                            'desc': duty_info.get('longName', duty_name),
+                            'desc': desc,
                             'dutyRate': f"{duty_rate}%"
                         }
                         total_punitive_rate += duty_rate
@@ -322,7 +479,8 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
             return {
                 "success": True,
                 "data": response_data,
-                "stackableCodeSets": all_stackable_codes
+                "stackableCodeSets": all_stackable_codes,
+                "debug": debug_info
             }, 200
 
         all_stackable_codes = []
@@ -359,15 +517,18 @@ def fetch_stackable_codes(hs_code, origin, destination, request_id):
         return {
             "success": True,
             "data": response_data,
-            "stackableCodeSets": all_stackable_codes
+            "stackableCodeSets": all_stackable_codes,
+            "debug": debug_info
         }, 200
 
     except requests.RequestException as e:
+        debug_info += f"Network error: {str(e)}\n"
         logger.error(f"[{request_id}] Network error: {str(e)}")
-        return {"success": False, "error": f"Network error: {str(e)}"}, 500
+        return {"success": False, "error": f"Network error: {str(e)}", "debug": debug_info}, 500
     except Exception as e:
+        debug_info += f"Unexpected error: {str(e)}\n"
         logger.error(f"[{request_id}] Unexpected error: {str(e)}")
-        return {"success": False, "error": f"Unexpected error: {str(e)}"}, 500
+        return {"success": False, "error": f"Unexpected error: {str(e)}", "debug": debug_info}, 500
 
 
 def order_stackable_hts_codes(primary_hts, chapter_98_codes, exemption_codes, chapter_99_tariff_codes):
@@ -427,7 +588,7 @@ def calculate_postal_duty():
         results = []
         total_duty = 0.0
         logic_applied = ""
-        coo_buckets = {}
+        all_rates = []  # Track all rates for max calculation
 
         for product in products:
             hs_code = product.get("hs_code")
@@ -443,7 +604,12 @@ def calculate_postal_duty():
 
             request_id = str(uuid.uuid4())
             stackable_result, status_code = fetch_stackable_codes(hs_code, coo, "US", request_id)
-            debug_info += f"Stackable result for {hs_code} from {coo}: {stackable_result}\n"
+
+            # Extract debug info from stackable_result if present
+            if stackable_result.get("debug"):
+                debug_info += f"Stackable codes debug for {hs_code} from {coo}:\n{stackable_result['debug']}\n"
+            else:
+                debug_info += f"Stackable result for {hs_code} from {coo}: {stackable_result}\n"
 
             if not stackable_result.get("success"):
                 return jsonify({"error": stackable_result.get("error"), "debug": debug_info}), status_code
@@ -458,19 +624,13 @@ def calculate_postal_duty():
                     rate_value = float(rate_str.strip('%'))
                     total_rate += rate_value
 
+            # Track all rates for finding maximum
+            all_rates.append(total_rate)
+
             stackable_hss = [item.get("code") for item in stackable_codes]
             stackable_hss_desc = [item.get("desc") for item in stackable_codes]
 
             logger.debug(f"Extracted rates: {rates}, Total rate: {total_rate}%, Stackable codes: {stackable_hss}")
-
-            if method == "ad_valorem":
-                if coo not in coo_buckets:
-                    coo_buckets[coo] = {"value": 0, "rate": total_rate}
-                else:
-                    # Update rate if higher (for mixed products from same COO)
-                    coo_buckets[coo]["rate"] = max(coo_buckets[coo]["rate"], total_rate)
-                coo_buckets[coo]["value"] += line_value
-                logic_applied = "Ad Valorem: Summed duties by COO buckets."
 
             # Calculate duty for this product line
             duty = line_value * (total_rate / 100) if total_rate > 0 else 0
@@ -490,13 +650,42 @@ def calculate_postal_duty():
             })
 
         # Calculate total duty based on method
+        alternative_savings = None
+
         if method == "ad_valorem":
-            total_duty = 0.0
-            for bucket_coo, bucket_data in coo_buckets.items():
-                bucket_duty = bucket_data["value"] * (bucket_data["rate"] / 100)
-                total_duty += bucket_duty
-                logger.debug(
-                    f"COO bucket {bucket_coo}: Value=${bucket_data['value']}, Rate={bucket_data['rate']}%, Duty=${bucket_duty}")
+            # FIXED: Use the maximum rate across ALL products, not COO-specific rates
+            max_rate = max(all_rates) if all_rates else 0
+            total_duty = total_value * (max_rate / 100)
+            logic_applied = f"Ad Valorem: Applied max rate {max_rate}% to total shipment value ${total_value}"
+
+            logger.debug(
+                f"Ad Valorem calculation: All rates = {all_rates}, Max rate = {max_rate}%, Total value = ${total_value}, Total duty = ${total_duty}")
+
+            # Calculate what specific method would cost
+            specific_duty = 0
+            if max_rate < 16:
+                specific_duty = 80
+            elif max_rate <= 25:
+                specific_duty = 160
+            else:  # max_rate > 25
+                specific_duty = 200
+
+            logger.debug(f"Ad valorem duty: ${total_duty:.2f} (${total_value} × {max_rate}%)")
+            logger.debug(f"Specific bracket duty: ${specific_duty} (rate {max_rate}% falls in >25% bracket)")
+
+            # Check if specific would save money
+            if specific_duty < total_duty:
+                savings = total_duty - specific_duty
+                alternative_savings = {
+                    "method": "Specific Bracket",
+                    "alternative_duty": float(specific_duty),
+                    "savings": float(savings),
+                    "reason": f"Since your maximum rate is {max_rate}%, the specific bracket method would charge a fixed ${specific_duty} instead of {max_rate}% of your ${total_value} shipment value."
+                }
+                logger.debug(f"Specific bracket would save ${savings:.2f} (${specific_duty} vs ${total_duty:.2f})")
+            else:
+                logger.debug(f"No savings available: specific bracket ${specific_duty} >= ad valorem ${total_duty:.2f}")
+
         else:  # specific
             max_rate = max(r["total_rate"] for r in results) if results else 0
             if max_rate < 16:
@@ -507,14 +696,38 @@ def calculate_postal_duty():
                 total_duty = 200
             logic_applied = f"Specific: Max rate {max_rate}% → ${total_duty}"
 
+            # Calculate what ad valorem would cost
+            ad_valorem_duty = total_value * (max_rate / 100)
+
+            # Check if ad valorem would save money
+            if ad_valorem_duty < total_duty:
+                savings = total_duty - ad_valorem_duty
+                alternative_savings = {
+                    "method": "Ad Valorem",
+                    "alternative_duty": float(ad_valorem_duty),
+                    "savings": float(savings),
+                    "reason": f"Since your shipment value is ${total_value} with a {max_rate}% rate, the ad valorem method would charge {max_rate}% of value (${ad_valorem_duty:.2f}) instead of the fixed ${total_duty} bracket."
+                }
+
         logger.debug(f"Final calculation: Total duty = ${total_duty}")
 
-        return jsonify({
+        response_data = {
             "results": results,
             "total_duty": total_duty,
             "logic_applied": logic_applied,
             "debug": debug_info
-        })
+        }
+
+        # Add savings recommendation if applicable
+        if alternative_savings:
+            response_data["savings_recommendation"] = alternative_savings
+            logger.debug(f"Alternative method could save ${alternative_savings['savings']:.2f}")
+            logger.debug(f"Adding savings_recommendation to response: {alternative_savings}")
+        else:
+            logger.debug("No alternative savings available")
+
+        logger.debug(f"Final response keys: {list(response_data.keys())}")
+        return jsonify(response_data)
 
     except Exception as e:
         debug_info += f"Unexpected error: {str(e)}\nStack trace: {traceback.format_exc()}\n"
