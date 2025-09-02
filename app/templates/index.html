@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>US Postal Duty Calculator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --avalara-primary: #004c97;
+      --avalara-secondary: #e8f4fd;
+      --avalara-accent: #0066cc;
+      --avalara-success: #28a745;
+      --avalara-danger: #dc3545;
+      --avalara-light-gray: #f5f7fa;
+      --avalara-border: #dde5ed;
+      --avalara-text: #2c3e50;
+      --avalara-text-light: #6c757d;
+    }
+
+    body {
+      background-color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--avalara-text);
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    .calculator-card {
+      background: white;
+      border: 1px solid var(--avalara-border);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 76, 151, 0.1);
+    }
+
+    .header-section {
+      background: var(--avalara-primary);
+      color: white;
+      padding: 2rem;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header-section h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .header-section p {
+      margin: 0.5rem 0 0 0;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+
+    .form-section {
+      padding: 1.5rem 2rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--avalara-primary);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--avalara-secondary);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--avalara-text);
+      margin-bottom: 0.5rem;
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .form-control, .form-select {
+      border: 1px solid var(--avalara-border);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      transition: border-color 0.15s ease-in-out;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--avalara-accent);
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.25);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 3rem;
+      margin-top: 0.5rem;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      padding: 1rem;
+      border: 1px solid var(--avalara-border);
+      border-radius: 4px;
+      transition: border-color 0.2s ease;
+    }
+
+    .radio-option:hover {
+      border-color: var(--avalara-accent);
+    }
+
+    .radio-option input[type="radio"]:checked + label {
+      color: var(--avalara-primary);
+    }
+
+    .radio-option input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--avalara-accent);
+      flex-shrink: 0;
+    }
+
+    .radio-option label {
+      margin-bottom: 0;
+      font-weight: 400;
+      cursor: pointer;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .tooltip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      background: var(--avalara-accent);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      cursor: help;
+      font-weight: bold;
+      position: relative;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    .tooltip-icon:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      max-width: 300px;
+      white-space: normal;
+      width: max-content;
+      text-align: left;
+      font-weight: normal;
+    }
+
+    .tooltip-icon:hover::before {
+      content: '';
+      position: absolute;
+      bottom: 115%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+      z-index: 1000;
+    }
+
+    .products-section {
+      background: var(--avalara-light-gray);
+      border: 1px solid var(--avalara-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .products-table {
+      background: white;
+      border: 1px solid var(--avalara-border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .products-table thead th {
+      background: var(--avalara-secondary);
+      font-weight: 600;
+      color: var(--avalara-primary);
+      padding: 1rem 0.75rem;
+      border: none;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .products-table tbody td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--avalara-border);
+      vertical-align: middle;
+    }
+
+    .products-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .product-row input, .product-row select {
+      border: 1px solid var(--avalara-border);
+      border-radius: 4px;
+      padding: 0.5rem;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    .product-row input:focus, .product-row select:focus {
+      border-color: var(--avalara-accent);
+      outline: none;
+    }
+
+    .btn-add-product {
+      background: var(--avalara-success);
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-add-product:hover {
+      background: #218838;
+    }
+
+    .btn-remove {
+      background: var(--avalara-danger);
+      border: none;
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-remove:hover {
+      background: #c82333;
+    }
+
+    .btn-remove:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .summary-section {
+      background: var(--avalara-light-gray);
+      border: 1px solid var(--avalara-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .summary-content {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--avalara-primary);
+    }
+
+    .summary-item-compact {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .summary-label {
+      font-size: 0.85rem;
+      color: var(--avalara-text-light);
+      font-weight: 400;
+    }
+
+    .summary-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--avalara-primary);
+    }
+
+    .calculate-btn {
+      background: var(--avalara-primary);
+      border: none;
+      color: white;
+      padding: 0.875rem 2.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    .calculate-btn:hover {
+      background: #003a7a;
+    }
+
+    .calculate-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .results-section {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: white;
+      border: 1px solid var(--avalara-border);
+      border-radius: 8px;
+    }
+
+    .results-table {
+      font-size: 0.85rem;
+    }
+
+    .results-table thead th {
+      background: var(--avalara-secondary);
+      font-weight: 600;
+      color: var(--avalara-primary);
+      padding: 0.75rem 0.5rem;
+      border: none;
+    }
+
+    .results-table tbody td {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--avalara-border);
+    }
+
+    .total-duty-highlight {
+      background: var(--avalara-success);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 4px;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .total-duty-highlight h4 {
+      margin: 0 0 0.5rem 0;
+      font-weight: 600;
+    }
+
+    .total-duty-highlight .amount {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .radio-group {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .summary-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .products-table {
+        font-size: 0.75rem;
+      }
+
+      .products-table thead th,
+      .products-table tbody td {
+        padding: 0.5rem 0.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="calculator-card">
+    <div class="header-section">
+      <h1>US Postal Duty Calculator</h1>
+      <p>Calculate customs duties and fees for your international shipments</p>
+    </div>
+
+    <div class="form-section">
+      <form id="duty-form">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="entry_date" class="form-label">Ship Date *</label>
+              <input type="date" class="form-control" id="entry_date" name="entry_date" required>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="destination_country" class="form-label">Destination Country *</label>
+              <select class="form-select" id="destination_country" name="destination_country">
+                <option value="US" selected>🇺🇸 United States</option>
+                <option value="CA">🇨🇦 Canada</option>
+                <option value="MX">🇲🇽 Mexico</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Calculation Method *</label>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="method_ad_valorem" name="method" value="ad_valorem" checked>
+                  <label for="method_ad_valorem">
+                    <span><strong>Ad Valorem</strong></span>
+                    <span class="tooltip-icon" data-tooltip="Duty calculated per COO bucket: declared value × effective IEEPA rate, then summed across all COO buckets in the package">i</span>
+                  </label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="method_specific" name="method" value="specific">
+                  <label for="method_specific">
+                    <span><strong>Specific Bracket</strong></span>
+                    <span class="tooltip-icon" data-tooltip="Duty based on highest IEEPA rate in package: <16% = $80, 16-25% = $160, >25% = $200 per package">i</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="products-section">
+          <h3 class="section-title">Product Information</h3>
+
+          <div class="table-responsive">
+            <table class="table products-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Tariff Code</th>
+                  <th>Country of Origin</th>
+                  <th>Quantity</th>
+                  <th>Item Value ($)</th>
+                  <th>Line Value ($)</th>
+                  <th>
+                    <button type="button" class="btn-add-product" onclick="addRow()">+ Add Item</button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="products-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="summary-section">
+          <div class="summary-content">
+            <span class="summary-title">Shipment Summary:</span>
+            <span class="summary-item-compact">
+              <span class="summary-label">Total Value:</span>
+              <span class="summary-value" id="total_value_display">$0.00</span>
+            </span>
+            <span class="summary-item-compact">
+              <span class="summary-label">Items:</span>
+              <span class="summary-value" id="total_items_display">0</span>
+            </span>
+          </div>
+          <input type="hidden" id="total_value" name="total_value">
+        </div>
+
+        <button type="submit" class="calculate-btn">Calculate Customs & Duties</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="results"></div>
+  <div id="debug" style="margin-top: 1rem;"></div>
+</div>
+
+<script>
+const COUNTRIES = [
+  { code: "CN", name: "China", flag: "🇨🇳" },
+  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "VN", name: "Vietnam", flag: "🇻🇳" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "MX", name: "Mexico", flag: "🇲🇽" },
+  { code: "JP", name: "Japan", flag: "🇯🇵" },
+  { code: "KR", name: "South Korea", flag: "🇰🇷" },
+  { code: "DE", name: "Germany", flag: "🇩🇪" },
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "IT", name: "Italy", flag: "🇮🇹" }
+];
+
+// Set today's date on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('entry_date').value = today;
+  addRow(); // Add initial row
+});
+
+function addRow() {
+  const table = document.getElementById("products-body");
+  const row = document.createElement("tr");
+  row.className = "product-row";
+
+  const cooOptions = COUNTRIES.map(c =>
+    `<option value="${c.code}" ${c.code === "CN" ? "selected" : ""}>${c.flag} ${c.name}</option>`
+  ).join("");
+
+  row.innerHTML = `
+    <td><input name="description" class="form-control" placeholder="e.g., Men's cotton shirt" onblur="fetchHSCode(this)" required></td>
+    <td><input name="hs_code" class="form-control" placeholder="Auto-filled" readonly></td>
+    <td><select name="coo" class="form-select">${cooOptions}</select></td>
+    <td><input name="quantity" type="number" value="1" class="form-control" min="1" required onchange="updateLineValue(this)"></td>
+    <td><input name="per_unit_value" type="number" step="0.01" class="form-control" value="0.00" placeholder="0.00" required onchange="updateLineValue(this)"></td>
+    <td><input name="line_value" type="text" class="form-control" readonly value="0.00" style="background-color: var(--avalara-light-gray);"></td>
+    <td><button type="button" class="btn-remove" onclick="removeRow(this)">×</button></td>
+  `;
+
+  table.appendChild(row);
+  updateTotals();
+  updateRemoveButtons();
+}
+
+function removeRow(button) {
+  button.closest('tr').remove();
+  updateTotals();
+  updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+  const rows = document.querySelectorAll("#products-body tr");
+  const removeButtons = document.querySelectorAll(".btn-remove");
+
+  removeButtons.forEach(button => {
+    if (rows.length <= 1) {
+      button.disabled = true;
+      button.style.opacity = '0.5';
+      button.style.cursor = 'not-allowed';
+    } else {
+      button.disabled = false;
+      button.style.opacity = '1';
+      button.style.cursor = 'pointer';
+    }
+  });
+}
+
+function updateLineValue(input) {
+  const row = input.closest("tr");
+  const quantity = parseFloat(row.querySelector('input[name="quantity"]').value) || 0;
+  const perUnitValue = parseFloat(row.querySelector('input[name="per_unit_value"]').value) || 0;
+  const lineValueInput = row.querySelector('input[name="line_value"]');
+  lineValueInput.value = (quantity * perUnitValue).toFixed(2);
+  updateTotals();
+}
+
+function updateTotals() {
+  const rows = document.querySelectorAll("#products-body tr");
+
+  let totalValue = 0;
+  let totalItems = 0;
+
+  Array.from(rows).forEach(row => {
+    const lineValue = parseFloat(row.querySelector('input[name="line_value"]').value || 0);
+    const quantity = parseFloat(row.querySelector('input[name="quantity"]').value || 0);
+
+    totalValue += lineValue;
+    totalItems += quantity;
+  });
+
+  document.getElementById("total_value").value = totalValue.toFixed(2);
+  document.getElementById("total_value_display").textContent = `$${totalValue.toFixed(2)}`;
+  document.getElementById("total_items_display").textContent = totalItems.toString();
+}
+
+async function fetchHSCode(input) {
+  const row = input.closest("tr");
+  const desc = input.value;
+  const coo = row.querySelector('select[name="coo"]').value;
+  const hsField = row.querySelector('input[name="hs_code"]');
+
+  console.log(`DEBUG: fetchHSCode called with description: "${desc}", COO: "${coo}"`);
+
+  if (!desc || !hsField) return;
+
+  // Add loading state
+  hsField.placeholder = "Loading...";
+  hsField.style.backgroundColor = "var(--avalara-light-gray)";
+
+  try {
+    const response = await fetch("/fetch_hs_code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: desc, coo: coo })
+    });
+
+    const json = await response.json();
+    if (json.hs_code) {
+      hsField.value = json.hs_code;
+      hsField.style.backgroundColor = "#d4edda"; // Light green
+    } else {
+      console.error("HS Code lookup failed:", json.error);
+      hsField.placeholder = "Not found";
+      hsField.style.backgroundColor = "#f8d7da"; // Light red
+      document.getElementById("debug").innerHTML = `<div class="alert alert-warning">HS Code lookup failed: ${json.error}</div>`;
+    }
+  } catch (err) {
+    console.error("HS Code lookup failed:", err);
+    hsField.placeholder = "Error";
+    hsField.style.backgroundColor = "#f8d7da";
+  }
+}
+
+document.getElementById("duty-form").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const submitBtn = document.querySelector('.calculate-btn');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Calculating...';
+  submitBtn.disabled = true;
+
+  const entry_date = document.getElementById("entry_date").value;
+  const method = document.querySelector('input[name="method"]:checked').value;
+  const destination_country = document.getElementById("destination_country").value;
+  const rows = document.querySelectorAll("#products-body tr");
+
+  const products = Array.from(rows).map((row, index) => {
+    const description = row.querySelector('input[name="description"]').value;
+    const hs_code = row.querySelector('input[name="hs_code"]').value;
+    const coo = row.querySelector('select[name="coo"]').value;
+    const quantity = parseInt(row.querySelector('input[name="quantity"]').value);
+    const per_unit_value = parseFloat(row.querySelector('input[name="per_unit_value"]').value);
+    const line_value = parseFloat(row.querySelector('input[name="line_value"]').value);
+
+    console.log(`DEBUG: Product ${index} - Description: "${description}", COO: "${coo}", HS: "${hs_code}"`);
+
+    return {
+      description: description,
+      hs_code: hs_code,
+      coo: coo,
+      quantity: quantity,
+      per_unit_value: per_unit_value,
+      line_value: line_value
+    };
+  });
+
+  console.log("DEBUG: Complete products array being sent:", products);
+
+  const total_value = parseFloat(document.getElementById("total_value").value);
+
+  const payload = {
+    entry_date,
+    method,
+    destination_country,
+    products,
+    total_value
+  };
+
+  console.log("DEBUG: Complete payload being sent:", payload);
+
+  try {
+    const res = await fetch("/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    displayResults(json);
+  } catch (error) {
+    console.error("Calculation failed:", error);
+    document.getElementById("results").innerHTML = `<div class="alert alert-danger">Calculation failed: ${error.message}</div>`;
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
+});
+
+function displayResults(json) {
+  const resultsContainer = document.getElementById("results");
+  const debugContainer = document.getElementById("debug");
+
+  if (json.error) {
+    resultsContainer.innerHTML = `
+      <div class="results-section">
+        <div class="alert alert-danger">
+          <strong>Calculation Error:</strong> ${json.error}
+        </div>
+      </div>`;
+    debugContainer.innerHTML = json.debug ? `<pre style="background: var(--avalara-light-gray); padding: 1rem; border-radius: 4px; font-size: 0.85rem;">${json.debug}</pre>` : "";
+    return;
+  }
+
+  resultsContainer.innerHTML = `
+    <div class="results-section">
+      <h3 class="section-title">Calculation Results</h3>
+
+      <div class="table-responsive">
+        <table class="table results-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Tariff Code</th>
+              <th>COO</th>
+              <th>Qty</th>
+              <th>Unit Value</th>
+              <th>Line Value</th>
+              <th>Total Rate</th>
+              <th>Total Duty</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${json.results.map(r => `
+              <tr>
+                <td>${r.description}</td>
+                <td>${r.hs_code}</td>
+                <td>${r.coo}</td>
+                <td>${r.quantity}</td>
+                <td>$${r.per_unit_value.toFixed(2)}</td>
+                <td>$${r.line_value.toFixed(2)}</td>
+                <td>${r.total_rate}%</td>
+                <td>$${r.duty.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      ${json.results.length > 0 && json.results.some(r => r.stackable_hss && r.stackable_hss.length > 0) ? `
+        <div class="mt-4">
+          <h4 class="section-title">Duty Rate Calculation Breakdown</h4>
+          ${json.results.map((r, index) => {
+            if (!r.stackable_hss || r.stackable_hss.length === 0) return '';
+            return `
+            <div class="card mb-3" style="border: 1px solid var(--avalara-border); border-radius: 4px;">
+              <div class="card-header" style="background: var(--avalara-secondary); padding: 1rem; border-bottom: 1px solid var(--avalara-border);">
+                <h6 class="mb-0" style="font-weight: 600; color: var(--avalara-primary);">${r.description} (${r.hs_code}) from ${r.coo}</h6>
+              </div>
+              <div class="card-body" style="padding: 1rem;">
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead>
+                      <tr style="background: var(--avalara-light-gray);">
+                        <th style="font-weight: 600; color: var(--avalara-text); padding: 0.5rem;">Stackable HS Code</th>
+                        <th style="font-weight: 600; color: var(--avalara-text); padding: 0.5rem;">Description</th>
+                        <th style="font-weight: 600; color: var(--avalara-text); padding: 0.5rem;">Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${r.stackable_hss.map((hs, idx) => `
+                        <tr>
+                          <td style="padding: 0.5rem; color: var(--avalara-accent); font-weight: 500;">${hs}</td>
+                          <td style="padding: 0.5rem; color: var(--avalara-text-light); font-size: 0.8rem;">${r.stackable_hss_desc ? r.stackable_hss_desc[idx] || 'N/A' : 'N/A'}</td>
+                          <td style="padding: 0.5rem; font-weight: 600; color: var(--avalara-danger);">${r.rates ? r.rates[idx] || '0%' : '0%'}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mt-3 pt-3" style="border-top: 1px solid var(--avalara-border);">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-weight: 600; color: var(--avalara-text);">Total Combined Rate:</span>
+                    <span style="font-weight: 700; color: var(--avalara-accent); font-size: 1.1rem;">${r.total_rate}%</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span style="color: var(--avalara-text-light);">Applied to Line Value ($${r.line_value.toFixed(2)}):</span>
+                    <span style="font-weight: 600; color: var(--avalara-success);">$${r.duty.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <div style="background: var(--avalara-light-gray); padding: 1.5rem; border-radius: 4px; border: 1px solid var(--avalara-border);">
+            <p><strong>Calculation Method:</strong> ${json.logic_applied}</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="total-duty-highlight">
+            <h4>Total Customs Duty</h4>
+            <div class="amount">${json.total_duty.toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  debugContainer.innerHTML = json.debug ?
+    `<details style="background: var(--avalara-light-gray); padding: 1rem; border-radius: 4px; margin-top: 1rem; border: 1px solid var(--avalara-border);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--avalara-primary);">Debug Information</summary>
+      <pre style="margin-top: 1rem; font-size: 0.85rem; white-space: pre-wrap;">${json.debug}</pre>
+    </details>` : "";
+}
+</script>
+
+</body>
+</html>
