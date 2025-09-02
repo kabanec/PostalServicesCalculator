@@ -34,6 +34,10 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         request_id = str(uuid.uuid4())
+        # Bypass authentication for HEAD requests (e.g., Render health checks)
+        if request.method == 'HEAD':
+            logger.debug(f"[{request_id}] Allowing HEAD request without authentication")
+            return f(*args, **kwargs)
         auth = request.authorization
         logger.debug(f"[{request_id}] Authorization header: {auth}")
         if not auth:
@@ -44,7 +48,6 @@ def auth_required(f):
             return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
         logger.debug(f"[{request_id}] Authentication successful")
         return f(*args, **kwargs)
-
     return decorated
 
 
@@ -89,7 +92,7 @@ def fetch_hs_code():
             "companyId": int(COMPANY_ID),
             "currency": "USD",
             "sellerCode": "SC8104341",
-            "shipFrom": {"country": coo},
+            "shipFrom": {"country": "GB"},
             "destinations": [{"shipTo": {"country": "US", "region": "MA"}}],
             "lines": [{
                 "lineNumber": 1,
