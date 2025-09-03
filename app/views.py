@@ -29,6 +29,28 @@ logger = logging.getLogger(__name__)
 VALID_USER = os.getenv("AUTH_USER", "admin")
 VALID_PASS = os.getenv("AUTH_PASS", "password")
 
+# Exchange rates for currency conversion
+EXCHANGE_RATES = {
+    'USD': 1.00, 'EUR': 0.85, 'CNY': 7.25, 'JPY': 149.50, 'GBP': 0.73,
+    'CAD': 1.37, 'AUD': 1.52, 'KRW': 1320.00, 'INR': 83.20, 'MXN': 17.25,
+    'BRL': 5.05, 'VND': 24500.00, 'THB': 35.80, 'MYR': 4.65, 'SGD': 1.35,
+    'PHP': 56.20, 'IDR': 15750.00, 'TWD': 31.50, 'HKD': 7.82, 'CHF': 0.88,
+    'SEK': 10.85, 'NOK': 10.75, 'DKK': 6.85, 'PLN': 4.05
+}
+
+
+def convert_currency(amount, from_currency, to_currency='USD'):
+    """Convert amount from one currency to another using exchange rates"""
+    if from_currency == to_currency:
+        return amount
+
+    from_rate = EXCHANGE_RATES.get(from_currency, 1.0)
+    to_rate = EXCHANGE_RATES.get(to_currency, 1.0)
+
+    # Convert to USD first, then to target currency
+    usd_amount = amount / from_rate
+    return usd_amount * to_rate
+
 
 def auth_required(f):
     @wraps(f)
@@ -177,7 +199,7 @@ def fetch_hs_code():
                 },
                 "classificationParameters": classification_params
             }],
-            "type": "QUOTE_MAXIMUM",
+            "type": "QUOTE_ENHANCED10",
             "disableCalculationSummary": False,
             "restrictionsCheck": True,
             "program": "Regular"
@@ -567,10 +589,11 @@ def calculate_postal_duty():
         entry_date = datetime.strptime(data.get("entry_date"), "%Y-%m-%d")
         method = data.get("method", "ad_valorem")
         products = data.get("products", [])
-        total_value = data.get("total_value", 0)
+        total_value = float(data.get("total_value") or 0)
+        calculation_currency = data.get("calculation_currency", "USD")
         debug_info = ""
 
-        logger.debug(f"Received calculation request with {len(products)} products")
+        logger.debug(f"Received calculation request with {len(products)} products in currency {calculation_currency}")
         for i, product in enumerate(products):
             logger.debug(
                 f"Product {i}: {product.get('description')} from {product.get('coo')} with HS {product.get('hs_code')}")
@@ -632,16 +655,19 @@ def calculate_postal_duty():
 
             logger.debug(f"Extracted rates: {rates}, Total rate: {total_rate}%, Stackable codes: {stackable_hss}")
 
-            # Calculate duty for this product line
+            # Calculate duty for this product line (in USD)
             duty = line_value * (total_rate / 100) if total_rate > 0 else 0
 
             results.append({
                 "description": product.get("description", ""),
                 "hs_code": hs_code,
                 "coo": coo,
+                "currency": calculation_currency,
                 "quantity": product.get("quantity", 1),
                 "per_unit_value": product.get("per_unit_value", 0),
                 "line_value": line_value,
+                "original_per_unit_value": product.get("original_per_unit_value", 0),
+                "original_line_value": product.get("original_line_value", 0),
                 "stackable_hss": stackable_hss,
                 "stackable_hss_desc": stackable_hss_desc,
                 "rates": rates,
@@ -649,11 +675,11 @@ def calculate_postal_duty():
                 "duty": duty
             })
 
-        # Calculate total duty based on method
+        # Calculate total duty based on method (still in USD for internal calculations)
         alternative_savings = None
 
         if method == "ad_valorem":
-            # FIXED: Use the maximum rate across ALL products, not COO-specific rates
+            # Use the maximum rate across ALL products
             max_rate = max(all_rates) if all_rates else 0
             total_duty = total_value * (max_rate / 100)
             logic_applied = f"Ad Valorem: Applied max rate {max_rate}% to total shipment value ${total_value}"
@@ -714,6 +740,7 @@ def calculate_postal_duty():
         response_data = {
             "results": results,
             "total_duty": total_duty,
+            "calculation_currency": calculation_currency,
             "logic_applied": logic_applied,
             "debug": debug_info
         }
