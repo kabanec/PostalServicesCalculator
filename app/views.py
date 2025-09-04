@@ -89,18 +89,31 @@ def parse_rate(rate_str):
     return total_rate
 
 
+def get_region_for_country(destination_country):
+    """Get appropriate region for destination country"""
+    region_mapping = {
+        'US': 'MA',  # Massachusetts for US
+        'CA': 'ON',  # Ontario for Canada
+        'MX': 'DF',  # Mexico City for Mexico
+    }
+    return region_mapping.get(destination_country, '')
+
+
 @main.route("/fetch_hs_code", methods=["POST"])
 @auth_required
 def fetch_hs_code():
     data = request.get_json()
     description = data.get("description")
     coo = data.get("coo")
+    destination_country = data.get("destination_country", "US")  # ADD THIS LINE
     verify_description = data.get("verify_description", False)
     debug_info = f"Request data: {data}\n"
 
     if not description or not coo:
         debug_info += "Validation failed: Description or COO missing.\n"
         return jsonify({"error": "Description and COO are required", "debug": debug_info}), 400
+
+    logger.debug(f"Fetching HS code for destination: {destination_country}")  # ADD THIS LINE
 
     try:
         # Step 1: Call 3CEOnline classification API to get HS6 code
@@ -180,13 +193,16 @@ def fetch_hs_code():
         else:
             debug_info += "No HS6 code available - Avalara will classify based on description only.\n"
 
+        # FIXED: Use actual destination country instead of hardcoded "US"
+        destination_region = get_region_for_country(destination_country)
+
         avalara_payload = {
             "id": "classification-request",
             "companyId": int(COMPANY_ID),
             "currency": "USD",
             "sellerCode": "SC8104341",
             "shipFrom": {"country": coo},
-            "destinations": [{"shipTo": {"country": "US", "region": "MA"}}],
+            "destinations": [{"shipTo": {"country": destination_country, "region": destination_region}}],  # FIXED
             "lines": [{
                 "lineNumber": 1,
                 "quantity": 1,
@@ -205,7 +221,8 @@ def fetch_hs_code():
             "program": "Regular"
         }
 
-        logger.debug(f"Sending Avalara request to {AVALARA_API_URL} with payload: {avalara_payload}")
+        logger.debug(
+            f"Sending Avalara request to {AVALARA_API_URL} with destination {destination_country} and payload: {avalara_payload}")
         avalara_response = requests.post(AVALARA_API_URL, headers=avalara_headers, json=avalara_payload, timeout=10)
         avalara_response.raise_for_status()
         avalara_json = avalara_response.json()
@@ -588,12 +605,14 @@ def calculate_postal_duty():
         data = request.get_json()
         entry_date = datetime.strptime(data.get("entry_date"), "%Y-%m-%d")
         method = data.get("method", "ad_valorem")
+        destination_country = data.get("destination_country", "US")  # ADD THIS LINE
         products = data.get("products", [])
         total_value = float(data.get("total_value") or 0)
         calculation_currency = data.get("calculation_currency", "USD")
         debug_info = ""
 
-        logger.debug(f"Received calculation request with {len(products)} products in currency {calculation_currency}")
+        logger.debug(
+            f"Received calculation request with {len(products)} products for destination {destination_country} in currency {calculation_currency}")  # MODIFIED
         for i, product in enumerate(products):
             logger.debug(
                 f"Product {i}: {product.get('description')} from {product.get('coo')} with HS {product.get('hs_code')}")
@@ -627,13 +646,14 @@ def calculate_postal_duty():
                 return jsonify({"error": "All products must have HS Code and COO.", "debug": debug_info}), 400
 
             request_id = str(uuid.uuid4())
-            stackable_result, status_code = fetch_stackable_codes(hs_code, coo, "US", request_id)
+            # FIXED: Use actual destination country instead of hardcoded "US"
+            stackable_result, status_code = fetch_stackable_codes(hs_code, coo, destination_country, request_id)
 
             # Extract debug info from stackable_result if present
             if stackable_result.get("debug"):
-                debug_info += f"Stackable codes debug for {hs_code} from {coo}:\n{stackable_result['debug']}\n"
+                debug_info += f"Stackable codes debug for {hs_code} from {coo} to {destination_country}:\n{stackable_result['debug']}\n"  # MODIFIED
             else:
-                debug_info += f"Stackable result for {hs_code} from {coo}: {stackable_result}\n"
+                debug_info += f"Stackable result for {hs_code} from {coo} to {destination_country}: {stackable_result}\n"  # MODIFIED
 
             if not stackable_result.get("success"):
                 return jsonify({"error": stackable_result.get("error"), "debug": debug_info}), status_code

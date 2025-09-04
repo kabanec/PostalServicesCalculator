@@ -1055,6 +1055,7 @@ async function fetchHSCode(input) {
   const row = input.closest("tr");
   const desc = input.value;
   const coo = row.querySelector('select[name="coo"]').value;
+  const destinationCountry = document.getElementById('destination_country').value;  // ADD THIS LINE
   const hsField = row.querySelector('input[name="hs_code"]');
   const warningDiv = row.querySelector('.description-warning');
   const verifyEnabled = document.getElementById('verify_description').checked;
@@ -1077,6 +1078,7 @@ async function fetchHSCode(input) {
       body: JSON.stringify({
         description: desc,
         coo: coo,
+        destination_country: destinationCountry,  // ADD THIS LINE
         verify_description: verifyEnabled
       })
     });
