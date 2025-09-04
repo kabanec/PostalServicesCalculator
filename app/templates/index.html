@@ -311,6 +311,37 @@
       box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
     }
 
+    /* Avalara-branded HS Code field states */
+    .hs-code-success {
+      background-color: rgba(5, 107, 166, 0.08) !important;
+      border-color: #056BA6 !important;
+      color: #004459 !important;
+    }
+
+    .hs-code-manual {
+      background-color: rgba(5, 107, 166, 0.12) !important;
+      border-color: #056BA6 !important;
+      color: #004459 !important;
+    }
+
+    .hs-code-warning {
+      background-color: rgba(255, 102, 0, 0.08) !important;
+      border-color: #FF6600 !important;
+      color: #004459 !important;
+    }
+
+    .hs-code-error {
+      background-color: rgba(239, 68, 68, 0.08) !important;
+      border-color: #EF4444 !important;
+      color: #004459 !important;
+    }
+
+    .hs-code-loading {
+      background-color: #F9FAFB !important;
+      border-color: #E5E7EB !important;
+      color: #6B7280 !important;
+    }
+
     .btn-add-product {
       background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
       border: none;
@@ -452,9 +483,9 @@
     }
 
     .description-warning {
-      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-      border: 2px solid #F59E0B;
-      color: #92400E;
+      background: linear-gradient(135deg, rgba(255, 102, 0, 0.08) 0%, rgba(255, 102, 0, 0.05) 100%);
+      border: 2px solid #FF6600;
+      color: #004459;
       padding: 0.75rem 1rem;
       border-radius: 8px;
       font-size: 0.8rem;
@@ -478,7 +509,7 @@
       border-top: 1px solid #E5E7EB;
     }
 
-    /* Duty Rate Calculation Breakdown Styles */
+    /* Updated Duty Rate Calculation Breakdown Styles - Avalara Branded */
     .duty-breakdown-section {
       margin-top: 2rem;
       padding: 2rem;
@@ -494,95 +525,124 @@
       color: #004459;
       margin-bottom: 2rem;
       text-align: center;
+      font-family: 'Apertura', 'Avenir Next Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .product-breakdown {
-      background: #e6f3ff;
-      border: 1px solid #b3d9ff;
-      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(5, 107, 166, 0.03) 0%, rgba(250, 251, 252, 1) 100%);
+      border: 2px solid #E5E7EB;
+      border-left: 6px solid #056BA6;
+      border-radius: 12px;
       margin-bottom: 2rem;
       overflow: hidden;
+      box-shadow: 0 2px 8px rgba(5, 107, 166, 0.08);
     }
 
     .product-breakdown-header {
-      background: #cce7ff;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #b3d9ff;
+      background: linear-gradient(135deg, #056BA6 0%, #004459 100%);
+      color: white;
+      padding: 1.25rem 1.5rem;
+      border-bottom: none;
       font-weight: 600;
-      color: #0066cc;
+      font-size: 1rem;
+      font-family: 'Apertura', 'Avenir Next Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .breakdown-table {
       width: 100%;
       margin: 0;
       background: white;
+      border-collapse: collapse;
+      font-family: 'Apertura', 'Avenir Next Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .breakdown-table th {
-      background: #f8f9fa;
-      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+      padding: 1rem 1.25rem;
       font-weight: 600;
-      color: #495057;
-      border: 1px solid #dee2e6;
+      color: #004459;
+      border: 1px solid #E5E7EB;
       text-align: left;
+      font-size: 0.875rem;
+      border-bottom: 2px solid #056BA6;
     }
 
     .breakdown-table td {
-      padding: 0.75rem 1rem;
-      border: 1px solid #dee2e6;
+      padding: 1rem 1.25rem;
+      border: 1px solid #E5E7EB;
       vertical-align: middle;
+      font-size: 0.875rem;
+      color: #374151;
+    }
+
+    .breakdown-table tbody tr:hover {
+      background-color: rgba(5, 107, 166, 0.02);
     }
 
     .hs-code-link {
-      color: #0066cc;
+      color: #056BA6;
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .hs-code-link:hover {
+      color: #004459;
+      text-decoration: underline;
     }
 
     .rate-cell {
       text-align: right;
-      font-weight: 600;
-      color: #dc3545;
+      font-weight: 700;
+      color: #FF6600;
+      font-size: 0.9rem;
     }
 
     .breakdown-summary {
       padding: 1.5rem;
-      background: #f8f9fa;
-      border-top: 1px solid #dee2e6;
+      background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%);
+      border-top: 2px solid #E5E7EB;
     }
 
     .summary-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.875rem;
       font-size: 1rem;
+      font-family: 'Apertura', 'Avenir Next Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .summary-row:last-child {
       margin-bottom: 0;
-      font-weight: 600;
-      font-size: 1.1rem;
+      font-weight: 700;
+      font-size: 1.125rem;
+      padding-top: 0.75rem;
+      border-top: 2px solid #E5E7EB;
     }
 
-    .summary-label {
-      color: #495057;
+    .summary-row .summary-label {
+      color: #56646A;
+      font-weight: 500;
     }
 
-    .summary-amount {
+    .summary-row .summary-amount {
       font-weight: 600;
     }
 
     .total-rate {
-      color: #0066cc;
-      font-size: 1.2rem;
+      color: #056BA6;
+      font-size: 1.25rem;
+      font-weight: 700;
     }
 
     .duty-amount {
-      color: #28a745;
-      font-size: 1.2rem;
+      color: #FF6600;
+      font-size: 1.25rem;
+      font-weight: 700;
     }
 
+    /* Enhanced responsive design */
     @media (max-width: 768px) {
       .radio-group {
         flex-direction: column;
@@ -595,12 +655,14 @@
         gap: 1.25rem;
       }
 
-      .products-table {
+      .products-table, .breakdown-table {
         font-size: 0.8rem;
       }
 
       .products-table thead th,
-      .products-table tbody td {
+      .products-table tbody td,
+      .breakdown-table th,
+      .breakdown-table td {
         padding: 0.75rem 0.5rem;
       }
 
@@ -614,6 +676,34 @@
 
       .products-section {
         padding: 1.5rem;
+      }
+
+      .duty-breakdown-section {
+        padding: 1.5rem;
+      }
+
+      .duty-breakdown-title {
+        font-size: 1.25rem;
+      }
+
+      .product-breakdown-header {
+        padding: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .breakdown-summary {
+        padding: 1rem;
+      }
+
+      .summary-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+        margin-bottom: 1rem;
+      }
+
+      .total-rate, .duty-amount {
+        font-size: 1.1rem;
       }
     }
   </style>
@@ -971,10 +1061,14 @@ async function fetchHSCode(input) {
 
   if (!desc || !hsField) return;
 
+  // Reset all states
   warningDiv.classList.remove('show');
   warningDiv.textContent = '';
+  hsField.className = hsField.className.replace(/hs-code-\w+/g, '');
+
+  // Set loading state
   hsField.placeholder = "Loading...";
-  hsField.style.backgroundColor = "#f5f7fa";
+  hsField.classList.add('hs-code-loading');
 
   try {
     const response = await fetch("/fetch_hs_code", {
@@ -989,25 +1083,33 @@ async function fetchHSCode(input) {
 
     const json = await response.json();
 
+    // Remove loading state
+    hsField.classList.remove('hs-code-loading');
+
     if (json.hs_code) {
+      // Success state - Auto-generated HS code with Avalara Blue styling
       hsField.value = json.hs_code;
-      hsField.style.backgroundColor = "#d1fae5";
+      hsField.classList.add('hs-code-success');
       hsField.setAttribute('readonly', true);
     } else if (json.verification_failed && verifyEnabled) {
+      // Warning state - Needs manual entry with Avalara Orange styling
       hsField.value = '';
       hsField.removeAttribute('readonly');
       hsField.placeholder = "Enter HS code manually";
-      hsField.style.backgroundColor = "#fef3c7";
+      hsField.classList.add('hs-code-warning');
       warningDiv.textContent = "⚠️ Description needs more details. Enter HS code manually or improve description.";
       warningDiv.classList.add('show');
       setTimeout(() => hsField.focus(), 100);
     } else {
+      // Error state - Not found
       hsField.placeholder = "Not found";
-      hsField.style.backgroundColor = "#fee2e2";
+      hsField.classList.add('hs-code-error');
     }
   } catch (err) {
+    // Error state - Network/API error
+    hsField.classList.remove('hs-code-loading');
     hsField.placeholder = "Error";
-    hsField.style.backgroundColor = "#fee2e2";
+    hsField.classList.add('hs-code-error');
   }
 }
 
@@ -1015,10 +1117,19 @@ function onHSCodeManualEntry(input) {
   const row = input.closest("tr");
   const warningDiv = row.querySelector('.description-warning');
 
+  // Remove all HS code state classes
+  input.className = input.className.replace(/hs-code-\w+/g, '');
+
   if (input.value.trim()) {
-    input.style.backgroundColor = "#dbeafe";
+    // Manual entry state - User has entered HS code manually
+    input.classList.add('hs-code-manual');
     warningDiv.classList.remove('show');
     warningDiv.textContent = '';
+  } else {
+    // Reset to default state
+    input.style.backgroundColor = '';
+    input.style.borderColor = '';
+    input.style.color = '';
   }
 }
 
