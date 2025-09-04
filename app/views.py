@@ -609,6 +609,7 @@ def calculate_postal_duty():
             return jsonify({"error": "Total shipment value exceeds $2,500. Postal method not available."}), 400
 
         results = []
+        duty_rate_breakdowns = []  # ADD THIS LINE
         total_duty = 0.0
         logic_applied = ""
         all_rates = []  # Track all rates for max calculation
@@ -674,6 +675,29 @@ def calculate_postal_duty():
                 "total_rate": total_rate,
                 "duty": duty
             })
+
+            # ADD THIS SECTION: Build duty rate breakdown for frontend
+            if stackable_codes:
+                breakdown_stackable_codes = []
+                for i, code_item in enumerate(stackable_codes):
+                    rate_str = code_item.get("dutyRate", "0%")
+                    rate_value = rate_str.strip('%') if rate_str.endswith('%') else rate_str
+
+                    breakdown_stackable_codes.append({
+                        "hs_code": code_item.get("code", ""),
+                        "description": code_item.get("desc", ""),
+                        "rate": rate_value
+                    })
+
+                duty_rate_breakdowns.append({
+                    "product_description": product.get("description", ""),
+                    "hs_code": hs_code,
+                    "country_of_origin": coo,
+                    "stackable_codes": breakdown_stackable_codes,
+                    "total_rate": str(total_rate),
+                    "line_value": float(line_value),
+                    "duty_amount": float(duty)
+                })
 
         # Calculate total duty based on method (still in USD for internal calculations)
         alternative_savings = None
@@ -742,6 +766,7 @@ def calculate_postal_duty():
             "total_duty": total_duty,
             "calculation_currency": calculation_currency,
             "logic_applied": logic_applied,
+            "duty_rate_breakdowns": duty_rate_breakdowns,  # ADD THIS LINE
             "debug": debug_info
         }
 

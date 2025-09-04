@@ -3,480 +3,617 @@
 <head>
   <title>US Postal Duty Calculator</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://design.avalara.com/assets/avalara-design-tokens.css" rel="stylesheet">
-  <link href="https://design.avalara.com/assets/avalara-components.css" rel="stylesheet">
   <style>
-    /* Using Avalara Design System tokens */
-    :root {
-      --av-color-primary: #0059b3;
-      --av-color-primary-light: #e6f3ff;
-      --av-color-success: #22c55e;
-      --av-color-danger: #ef4444;
-      --av-color-warning: #f59e0b;
-      --av-color-gray-50: #f9fafb;
-      --av-color-gray-100: #f3f4f6;
-      --av-color-gray-200: #e5e7eb;
-      --av-color-gray-600: #4b5563;
-      --av-color-gray-900: #111827;
-      --av-border-radius: 8px;
-      --av-spacing-xs: 0.25rem;
-      --av-spacing-sm: 0.5rem;
-      --av-spacing-md: 1rem;
-      --av-spacing-lg: 1.5rem;
-      --av-font-size-sm: 0.875rem;
-      --av-font-size-base: 1rem;
-      --av-font-size-lg: 1.125rem;
-    }
-
     body {
       background-color: #ffffff;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--av-color-gray-900);
-      font-size: var(--av-font-size-sm);
+      font-family: 'Apertura', 'Avenir Next Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #56646A;
+      font-size: 0.875rem;
+      line-height: 1.5;
     }
 
     .main-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: var(--av-spacing-md);
+      padding: 1rem;
     }
 
     .calculator-card {
       background: white;
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-border-radius);
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
     }
 
     .header-section {
-      background: var(--av-color-primary);
+      background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
       color: white;
-      padding: var(--av-spacing-md) var(--av-spacing-lg);
-      border-radius: var(--av-border-radius) var(--av-border-radius) 0 0;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .header-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 200px;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="80" cy="20" r="40" fill="rgba(255,255,255,0.1)"/></svg>') no-repeat;
+      background-size: contain;
     }
 
     .header-section h1 {
-      font-size: 1.5rem;
+      font-size: 1.875rem;
       font-weight: 600;
       margin: 0;
       line-height: 1.2;
+      position: relative;
+      z-index: 1;
     }
 
     .header-section p {
-      margin: var(--av-spacing-xs) 0 0 0;
-      opacity: 0.9;
+      margin: 0.75rem 0 0 0;
+      opacity: 0.95;
       font-weight: 400;
-      font-size: var(--av-font-size-sm);
+      font-size: 1rem;
+      position: relative;
+      z-index: 1;
     }
 
     .form-section {
-      padding: var(--av-spacing-md) var(--av-spacing-lg);
+      padding: 2rem;
+      background: #FAFBFC;
     }
 
     .section-title {
-      font-size: var(--av-font-size-base);
+      font-size: 1.125rem;
       font-weight: 600;
-      color: var(--av-color-primary);
-      margin-bottom: var(--av-spacing-md);
-      padding-bottom: var(--av-spacing-xs);
-      border-bottom: 2px solid var(--av-color-primary-light);
+      color: #004459;
+      margin-bottom: 1.5rem;
     }
 
     .form-group {
-      margin-bottom: var(--av-spacing-md);
+      margin-bottom: 1.25rem;
     }
 
     .form-label {
       font-weight: 600;
-      color: var(--av-color-gray-900);
-      margin-bottom: var(--av-spacing-xs);
+      color: #004459;
+      margin-bottom: 0.5rem;
       display: block;
-      font-size: var(--av-font-size-sm);
+      font-size: 0.875rem;
     }
 
     .form-control, .form-select {
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-spacing-xs);
-      padding: var(--av-spacing-sm) var(--av-spacing-md);
-      font-size: var(--av-font-size-sm);
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
       background-color: white;
+      color: #374151;
     }
 
     .form-control:focus, .form-select:focus {
-      border-color: var(--av-color-primary);
-      box-shadow: 0 0 0 2px rgba(0, 89, 179, 0.25);
+      border-color: #FF6600;
+      box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
       outline: none;
     }
 
     .radio-group {
       display: flex;
-      gap: var(--av-spacing-sm);
-      margin-top: var(--av-spacing-xs);
+      gap: 1rem;
+      margin-top: 0.5rem;
     }
 
     .radio-option {
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-xs);
+      gap: 0.75rem;
       flex: 1;
-      padding: var(--av-spacing-sm);
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-spacing-xs);
-      transition: border-color 0.2s ease;
-      font-size: var(--av-font-size-sm);
+      padding: 1rem 1.25rem;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
       background-color: white;
+      cursor: pointer;
     }
 
     .radio-option:hover {
-      border-color: var(--av-color-primary);
+      border-color: #FF6600;
+      background-color: rgba(255, 102, 0, 0.02);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(255, 102, 0, 0.1);
     }
 
     .radio-option input[type="radio"]:checked + label {
-      color: var(--av-color-primary);
+      color: #FF6600;
+      font-weight: 600;
+    }
+
+    .radio-option:has(input[type="radio"]:checked) {
+      border-color: #FF6600;
+      background-color: rgba(255, 102, 0, 0.05);
     }
 
     .radio-option input[type="radio"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--av-color-primary);
-      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: #FF6600;
     }
 
     .radio-option label {
       margin-bottom: 0;
       font-weight: 500;
       cursor: pointer;
-      line-height: 1.2;
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-xs);
+      gap: 0.5rem;
+      flex: 1;
+      color: #374151;
     }
 
     .checkbox-container {
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-sm);
-      margin-top: var(--av-spacing-xs);
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      padding: 1rem;
+      background: white;
+      border: 2px solid #E5E7EB;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-container:hover {
+      border-color: #FF6600;
+      background-color: rgba(255, 102, 0, 0.02);
     }
 
     .checkbox-container input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--av-color-primary);
-      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: #FF6600;
     }
 
     .checkbox-container label {
       margin-bottom: 0;
       font-weight: 500;
-      color: var(--av-color-gray-900);
+      color: #004459;
       cursor: pointer;
-      font-size: var(--av-font-size-sm);
+      font-size: 0.875rem;
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-xs);
+      gap: 0.5rem;
     }
 
     .verify-section {
-      background: var(--av-color-gray-50);
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-border-radius);
-      padding: var(--av-spacing-md);
-      margin: var(--av-spacing-sm) 0;
+      background: linear-gradient(135deg, rgba(255, 102, 0, 0.02) 0%, rgba(250, 251, 252, 1) 100%);
+      border: 2px solid #E5E7EB;
+      border-left: 6px solid #FF6600;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
     }
 
     .verify-info {
-      margin-top: var(--av-spacing-sm);
-      padding: var(--av-spacing-sm);
+      margin-top: 1rem;
+      padding: 1rem;
       background: white;
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-spacing-xs);
-      font-size: var(--av-font-size-sm);
-      color: var(--av-color-gray-600);
-      line-height: 1.4;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #6B7280;
+      line-height: 1.5;
     }
 
     .tooltip-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 16px;
-      height: 16px;
-      background: var(--av-color-primary);
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
       color: white;
       border-radius: 50%;
-      font-size: 10px;
+      font-size: 11px;
       cursor: help;
       font-weight: bold;
       position: relative;
-      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(255, 102, 0, 0.2);
     }
 
     .tooltip-icon:hover::after {
       content: attr(data-tooltip);
       position: absolute;
-      bottom: 125%;
+      bottom: 130%;
       left: 50%;
       transform: translateX(-50%);
-      background: #333;
+      background: #004459;
       color: white;
-      padding: var(--av-spacing-sm) var(--av-spacing-md);
-      border-radius: var(--av-spacing-xs);
+      padding: 0.875rem 1.125rem;
+      border-radius: 8px;
       font-size: 12px;
-      white-space: nowrap;
-      z-index: 1000;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      max-width: 300px;
       white-space: normal;
+      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0, 68, 89, 0.25);
+      max-width: 320px;
       width: max-content;
       text-align: left;
       font-weight: normal;
-      line-height: 1.3;
+      line-height: 1.4;
     }
 
     .tooltip-icon:hover::before {
       content: '';
       position: absolute;
-      bottom: 115%;
+      bottom: 120%;
       left: 50%;
       transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #333;
+      border: 8px solid transparent;
+      border-top-color: #004459;
       z-index: 1000;
     }
 
     .products-section {
-      background: var(--av-color-gray-50);
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-border-radius);
-      padding: var(--av-spacing-md);
-      margin: var(--av-spacing-md) 0;
+      padding: 2rem;
+      margin: 1.5rem 0;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #E5E7EB;
     }
 
     .products-table {
       background: white;
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-spacing-xs);
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .products-table thead th {
-      background: var(--av-color-primary-light);
+      background: #F9FAFB;
       font-weight: 600;
-      color: var(--av-color-primary);
-      padding: var(--av-spacing-sm);
+      color: #374151;
+      padding: 1.25rem 1rem;
       border: none;
-      font-size: var(--av-font-size-sm);
+      font-size: 0.875rem;
       text-align: left;
+      border-bottom: 2px solid #E5E7EB;
     }
 
     .products-table tbody td {
-      padding: var(--av-spacing-sm);
-      border-bottom: 1px solid var(--av-color-gray-200);
+      padding: 1rem 0.875rem;
+      border-bottom: 1px solid #F3F4F6;
       vertical-align: middle;
+      background: white;
     }
 
-    .products-table tbody tr:last-child td {
-      border-bottom: none;
+    .products-table tbody tr:hover {
+      background-color: rgba(255, 102, 0, 0.02);
     }
 
     .product-row input, .product-row select {
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-spacing-xs);
-      padding: var(--av-spacing-sm);
-      font-size: var(--av-font-size-sm);
+      border: 2px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
       width: 100%;
+      transition: all 0.2s ease;
     }
 
     .product-row input:focus, .product-row select:focus {
-      border-color: var(--av-color-primary);
+      border-color: #FF6600;
       outline: none;
-      box-shadow: 0 0 0 2px rgba(0, 89, 179, 0.25);
+      box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.1);
     }
 
     .btn-add-product {
-      background: var(--av-color-success);
+      background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%);
       border: none;
       color: white;
-      padding: var(--av-spacing-xs) var(--av-spacing-sm);
-      border-radius: var(--av-spacing-xs);
-      font-size: 0.75rem;
-      font-weight: 500;
+      padding: 0.625rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
       width: 100%;
-      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(255, 102, 0, 0.25);
     }
 
     .btn-add-product:hover {
-      background: #16a34a;
+      background: linear-gradient(135deg, #FF8533 0%, #FF6600 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 102, 0, 0.35);
     }
 
     .btn-remove {
-      background: var(--av-color-danger);
+      background: #EF4444;
       border: none;
       color: white;
-      padding: var(--av-spacing-xs);
-      border-radius: var(--av-spacing-xs);
-      font-size: 0.7rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
       cursor: pointer;
-      transition: background-color 0.2s ease;
       width: 100%;
+      transition: all 0.2s ease;
     }
 
     .btn-remove:hover {
-      background: #dc2626;
+      background: #DC2626;
+      transform: translateY(-1px);
     }
 
     .btn-remove:disabled {
-      background: var(--av-color-gray-600);
+      background: #9CA3AF;
       cursor: not-allowed;
+      transform: none;
     }
 
     .summary-section {
-      background: var(--av-color-gray-50);
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-border-radius);
-      padding: var(--av-spacing-md);
-      margin: var(--av-spacing-md) 0;
+      background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%);
+      border: 2px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .summary-content {
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-md);
+      gap: 2.5rem;
       flex-wrap: wrap;
     }
 
     .summary-title {
-      font-size: var(--av-font-size-base);
+      font-size: 1.125rem;
       font-weight: 600;
-      color: var(--av-color-primary);
+      color: #004459;
     }
 
     .summary-item-compact {
       display: flex;
       align-items: center;
-      gap: var(--av-spacing-xs);
+      gap: 0.625rem;
     }
 
     .summary-label {
-      font-size: var(--av-font-size-sm);
-      color: var(--av-color-gray-600);
-      font-weight: 400;
+      font-size: 0.875rem;
+      color: #6B7280;
+      font-weight: 500;
     }
 
     .summary-value {
-      font-size: var(--av-font-size-sm);
-      font-weight: 600;
-      color: var(--av-color-primary);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #FF6600;
     }
 
     .calculate-btn {
-      background: var(--av-color-primary);
+      background: linear-gradient(135deg, #004459 0%, #056BA6 100%);
       border: none;
       color: white;
-      padding: var(--av-spacing-md) var(--av-spacing-lg);
-      border-radius: var(--av-border-radius);
-      font-size: var(--av-font-size-base);
+      padding: 1.25rem 2.5rem;
+      border-radius: 12px;
+      font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.3s ease;
       width: 100%;
-      margin-top: var(--av-spacing-md);
+      margin-top: 2rem;
+      box-shadow: 0 4px 16px rgba(0, 68, 89, 0.25);
+      position: relative;
+      overflow: hidden;
     }
 
     .calculate-btn:hover {
-      background: #004594;
+      background: linear-gradient(135deg, #056BA6 0%, #004459 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 68, 89, 0.35);
     }
 
     .calculate-btn:disabled {
-      background: var(--av-color-gray-600);
+      background: #9CA3AF;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
     .results-section {
-      margin-top: var(--av-spacing-md);
-      padding: var(--av-spacing-md);
+      margin-top: 2rem;
+      padding: 2rem;
       background: white;
-      border: 1px solid var(--av-color-gray-200);
-      border-radius: var(--av-border-radius);
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     }
 
     .results-table {
-      font-size: var(--av-font-size-sm);
+      font-size: 0.875rem;
     }
 
     .results-table thead th {
-      background: var(--av-color-primary-light);
+      background: #F9FAFB;
       font-weight: 600;
-      color: var(--av-color-primary);
-      padding: var(--av-spacing-sm);
+      color: #374151;
+      padding: 1.25rem 1rem;
       border: none;
+      border-bottom: 2px solid #E5E7EB;
     }
 
     .results-table tbody td {
-      padding: var(--av-spacing-sm);
-      border-bottom: 1px solid var(--av-color-gray-200);
-    }
-
-    .total-duty-highlight {
-      background: var(--av-color-success);
-      color: white;
-      padding: var(--av-spacing-md);
-      border-radius: var(--av-border-radius);
-      text-align: center;
-      margin-top: var(--av-spacing-md);
-    }
-
-    .total-duty-highlight h4 {
-      margin: 0 0 var(--av-spacing-xs) 0;
-      font-weight: 600;
-      font-size: var(--av-font-size-base);
-    }
-
-    .total-duty-highlight .amount {
-      font-size: 1.5rem;
-      font-weight: 700;
+      padding: 1rem 0.875rem;
+      border-bottom: 1px solid #F3F4F6;
     }
 
     .description-warning {
-      background: #fef3c7;
-      border: 1px solid #fbbf24;
-      color: #92400e;
-      padding: var(--av-spacing-xs) var(--av-spacing-sm);
-      border-radius: var(--av-spacing-xs);
-      font-size: 0.7rem;
-      margin-top: var(--av-spacing-xs);
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      border: 2px solid #F59E0B;
+      color: #92400E;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
       display: none;
       font-weight: 500;
-      line-height: 1.2;
+      line-height: 1.4;
     }
 
     .description-warning.show {
       display: block;
     }
 
+    .avalara-footer {
+      color: #6B7280;
+      text-align: center;
+      padding: 2rem 0;
+      font-size: 0.875rem;
+      margin-top: 3rem;
+      font-weight: 500;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    /* Duty Rate Calculation Breakdown Styles */
+    .duty-breakdown-section {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .duty-breakdown-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #004459;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .product-breakdown {
+      background: #e6f3ff;
+      border: 1px solid #b3d9ff;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .product-breakdown-header {
+      background: #cce7ff;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #b3d9ff;
+      font-weight: 600;
+      color: #0066cc;
+    }
+
+    .breakdown-table {
+      width: 100%;
+      margin: 0;
+      background: white;
+    }
+
+    .breakdown-table th {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: #495057;
+      border: 1px solid #dee2e6;
+      text-align: left;
+    }
+
+    .breakdown-table td {
+      padding: 0.75rem 1rem;
+      border: 1px solid #dee2e6;
+      vertical-align: middle;
+    }
+
+    .hs-code-link {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .rate-cell {
+      text-align: right;
+      font-weight: 600;
+      color: #dc3545;
+    }
+
+    .breakdown-summary {
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .summary-row:last-child {
+      margin-bottom: 0;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .summary-label {
+      color: #495057;
+    }
+
+    .summary-amount {
+      font-weight: 600;
+    }
+
+    .total-rate {
+      color: #0066cc;
+      font-size: 1.2rem;
+    }
+
+    .duty-amount {
+      color: #28a745;
+      font-size: 1.2rem;
+    }
+
     @media (max-width: 768px) {
       .radio-group {
         flex-direction: column;
-        gap: var(--av-spacing-sm);
+        gap: 1rem;
       }
 
       .summary-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--av-spacing-sm);
+        gap: 1.25rem;
       }
 
       .products-table {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
       }
 
       .products-table thead th,
       .products-table tbody td {
-        padding: var(--av-spacing-xs);
+        padding: 0.75rem 0.5rem;
+      }
+
+      .header-section {
+        padding: 1.5rem;
+      }
+
+      .form-section {
+        padding: 1.5rem;
+      }
+
+      .products-section {
+        padding: 1.5rem;
       }
     }
   </style>
@@ -623,10 +760,14 @@
 
   <div id="results"></div>
   <div id="debug" style="margin-top: 1rem;"></div>
+
+  <footer class="avalara-footer">
+    © Avalara, Inc. 2025
+  </footer>
 </div>
 
 <script>
-// Country data (removed currency field since it's now global)
+// Country data
 const COUNTRIES = [
   { code: "CN", name: "China", flag: "🇨🇳" },
   { code: "US", name: "United States", flag: "🇺🇸" },
@@ -719,7 +860,6 @@ function getCalculationCurrency() {
 // Update all currency displays when global currency changes
 function updateAllCurrencyDisplays() {
   updateTotals();
-  // Update all placeholder text in value fields
   const valueInputs = document.querySelectorAll('input[name="per_unit_value"]');
   const currency = getCalculationCurrency();
 
@@ -757,7 +897,7 @@ function addRow() {
     <td><select name="coo" class="form-select">${countryOptions}</select></td>
     <td><input name="quantity" type="number" value="1" class="form-control" min="1" required onchange="updateLineValue(this)"></td>
     <td><input name="per_unit_value" type="number" step="0.01" class="form-control" value="0.00" placeholder="0.00 ${currency}" required onchange="updateLineValue(this)"></td>
-    <td><input name="line_value" type="text" class="form-control" readonly value="0.00 ${currency}" style="background-color: var(--av-color-gray-50);"></td>
+    <td><input name="line_value" type="text" class="form-control" readonly value="0.00" style="background-color: #f5f7fa;"></td>
     <td><button type="button" class="btn-remove" onclick="removeRow(this)">×</button></td>
   `;
 
@@ -791,10 +931,9 @@ function updateLineValue(input) {
   const quantity = parseFloat(row.querySelector('input[name="quantity"]').value) || 0;
   const perUnitValue = parseFloat(row.querySelector('input[name="per_unit_value"]').value) || 0;
   const lineValueInput = row.querySelector('input[name="line_value"]');
-  const currency = getCalculationCurrency();
   const lineValue = quantity * perUnitValue;
 
-  lineValueInput.value = `${lineValue.toFixed(2)} ${currency}`;
+  lineValueInput.value = lineValue.toFixed(2);
   updateTotals();
 }
 
@@ -835,7 +974,7 @@ async function fetchHSCode(input) {
   warningDiv.classList.remove('show');
   warningDiv.textContent = '';
   hsField.placeholder = "Loading...";
-  hsField.style.backgroundColor = "var(--av-color-gray-50)";
+  hsField.style.backgroundColor = "#f5f7fa";
 
   try {
     const response = await fetch("/fetch_hs_code", {
@@ -969,6 +1108,7 @@ document.getElementById("duty-form").addEventListener("submit", async function (
     displayResults(json);
   } catch (error) {
     document.getElementById("results").innerHTML = `<div class="alert alert-danger">Calculation failed: ${error.message}</div>`;
+    document.getElementById("debug").innerHTML = "";
   } finally {
     submitBtn.textContent = originalText;
     submitBtn.disabled = false;
@@ -988,7 +1128,7 @@ function displayResults(json) {
           <strong>Calculation Error:</strong> ${json.error}
         </div>
       </div>`;
-    debugContainer.innerHTML = json.debug ? `<pre style="background: var(--av-color-gray-50); padding: 1rem; border-radius: 4px; font-size: 0.85rem;">${json.debug}</pre>` : "";
+    debugContainer.innerHTML = json.debug ? `<pre style="background: #f5f7fa; padding: 1rem; border-radius: 8px; font-size: 0.85rem; border: 1px solid #E5E7EB;">${json.debug}</pre>` : "";
     return;
   }
 
@@ -1014,6 +1154,7 @@ function displayResults(json) {
               <th>Qty</th>
               <th>Unit Value</th>
               <th>Line Value</th>
+              <th>Rate Breakdown</th>
               <th>Total Rate</th>
               <th>Total Duty</th>
             </tr>
@@ -1027,51 +1168,61 @@ function displayResults(json) {
                 <td>${r.quantity}</td>
                 <td>${currencySymbol}${(r.original_per_unit_value || r.per_unit_value).toFixed(2)}</td>
                 <td>${currencySymbol}${(r.original_line_value || r.line_value).toFixed(2)}</td>
-                <td>${r.total_rate}%</td>
-                <td>${currencySymbol}${r.duty_in_selected_currency.toFixed(2)}</td>
+                <td style="font-size: 0.8rem;">
+                  ${r.rate_breakdown ? r.rate_breakdown.map(breakdown =>
+                    `<div style="margin-bottom: 0.25rem;">
+                      <strong>${breakdown.rate_type}:</strong> ${breakdown.rate}%
+                      ${breakdown.description ? `<br><span style="color: #6B7280; font-size: 0.75rem;">${breakdown.description}</span>` : ''}
+                    </div>`
+                  ).join('') :
+                    `<div><strong>Base Rate:</strong> ${r.total_rate}%</div>`
+                  }
+                </td>
+                <td><strong>${r.total_rate}%</strong></td>
+                <td><strong>${currencySymbol}${r.duty_in_selected_currency.toFixed(2)}</strong></td>
               </tr>`).join('')}
           </tbody>
         </table>
       </div>
 
-      <div class="row mt-4">
+      <div class="row mt-4 align-items-stretch">
         <div class="col-md-6">
-          <div style="background: var(--av-color-gray-50); padding: 1rem; border-radius: 4px; border: 1px solid var(--av-color-gray-200);">
-            <p><strong>Method:</strong> ${json.logic_applied}</p>
-            <p><strong>Currency:</strong> ${calculation_currency}</p>
+          <div style="background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%); padding: 2rem; border-radius: 12px; border: 2px solid #E5E7EB; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <p style="margin: 0 0 1rem 0;"><strong>Method:</strong> ${json.logic_applied}</p>
+            <p style="margin: 0;"><strong>Currency:</strong> ${calculation_currency}</p>
           </div>
         </div>
         <div class="col-md-6">
-          <div class="total-duty-highlight">
-            <h4>Total Customs Duty</h4>
-            <div class="amount">${currencySymbol}${total_duty_in_selected_currency.toFixed(2)}</div>
-            <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 0.25rem;">${calculation_currency}</div>
+          <div style="background: linear-gradient(135deg, #004459 0%, #056BA6 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; box-shadow: 0 6px 20px rgba(0, 68, 89, 0.25); height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <h4 style="margin: 0 0 0.75rem 0; font-weight: 600; font-size: 1.125rem;">Total Customs Duty</h4>
+            <div style="font-size: 2.25rem; font-weight: 700; margin: 0.5rem 0;">${currencySymbol}${total_duty_in_selected_currency.toFixed(2)}</div>
+            <div style="font-size: 0.8rem; opacity: 0.9; margin: 0;">${calculation_currency}</div>
           </div>
         </div>
       </div>
 
       ${json.savings_recommendation ? `
-        <div class="row mt-3">
+        <div class="row mt-4">
           <div class="col-12">
-            <div style="background: #ecfdf5; border: 2px solid #a7f3d0; padding: 1rem; border-radius: 6px; border-left: 4px solid var(--av-color-primary);">
-              <div class="d-flex align-items-center mb-2">
-                <div style="background: var(--av-color-primary); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 8px;">💡</div>
-                <h6 style="margin: 0; color: var(--av-color-primary); font-weight: 600;">Money-Saving Opportunity!</h6>
+            <div style="background: linear-gradient(135deg, rgba(255, 102, 0, 0.03) 0%, rgba(250, 251, 252, 1) 100%); border: 2px solid #E5E7EB; border-left: 6px solid #FF6600; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 102, 0, 0.08);">
+              <div class="d-flex align-items-center mb-3">
+                <div style="background: linear-gradient(135deg, #FF6600 0%, #FF8533 100%); color: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 16px; box-shadow: 0 3px 10px rgba(255, 102, 0, 0.25);">💡</div>
+                <h5 style="margin: 0; color: #004459; font-weight: 700; font-size: 1.25rem;">Money-Saving Opportunity!</h5>
               </div>
-              <div class="row">
+              <div class="row align-items-center">
                 <div class="col-md-8">
-                  <p style="margin: 0 0 0.25rem 0; color: var(--av-color-gray-900); line-height: 1.4; font-size: 0.85rem;">
-                    <strong>Alternative Method:</strong> ${json.savings_recommendation.method}
+                  <p style="margin: 0 0 0.75rem 0; color: #004459; line-height: 1.5; font-size: 1rem; font-weight: 600;">
+                    <span style="color: #FF6600;">Alternative Method:</span> ${json.savings_recommendation.method}
                   </p>
-                  <p style="margin: 0; color: var(--av-color-gray-600); font-size: 0.8rem; line-height: 1.3;">
+                  <p style="margin: 0; color: #6B7280; font-size: 0.95rem; line-height: 1.5; font-weight: 400;">
                     ${json.savings_recommendation.reason}
                   </p>
                 </div>
-                <div class="col-md-4 text-end">
-                  <div style="background: var(--av-color-success); color: white; padding: 0.75rem; border-radius: 4px; text-align: center;">
-                    <div style="font-size: 0.75rem; opacity: 0.9; margin-bottom: 0.2rem;">You could save</div>
-                    <div style="font-size: 1.2rem; font-weight: 700;">${currencySymbol}${convertCurrency(json.savings_recommendation.savings, 'USD', calculation_currency).toFixed(2)}</div>
-                    <div style="font-size: 0.7rem; opacity: 0.9; margin-top: 0.2rem;">Alt: ${currencySymbol}${convertCurrency(json.savings_recommendation.alternative_duty, 'USD', calculation_currency).toFixed(2)}</div>
+                <div class="col-md-4">
+                  <div style="background: linear-gradient(135deg, #004459 0%, #056BA6 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 6px 20px rgba(0, 68, 89, 0.25); border: 2px solid #004459;">
+                    <div style="font-size: 0.85rem; opacity: 0.95; margin-bottom: 0.5rem; font-weight: 500;">You could save</div>
+                    <div style="font-size: 1.5rem; font-weight: 800; margin: 0.5rem 0;">${currencySymbol}${convertCurrency(json.savings_recommendation.savings, 'USD', calculation_currency).toFixed(2)}</div>
+                    <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 0.5rem; font-weight: 400;">Alternative: ${currencySymbol}${convertCurrency(json.savings_recommendation.alternative_duty, 'USD', calculation_currency).toFixed(2)}</div>
                   </div>
                 </div>
               </div>
@@ -1080,12 +1231,53 @@ function displayResults(json) {
         </div>
       ` : ''}
     </div>
+
+    ${json.duty_rate_breakdowns ? `
+      <div class="duty-breakdown-section">
+        <h3 class="duty-breakdown-title">Duty Rate Calculation Breakdown</h3>
+        ${json.duty_rate_breakdowns.map(breakdown => `
+          <div class="product-breakdown">
+            <div class="product-breakdown-header">
+              ${breakdown.product_description} (${breakdown.hs_code}) from ${breakdown.country_of_origin}
+            </div>
+            <table class="breakdown-table">
+              <thead>
+                <tr>
+                  <th>Stackable HS Code</th>
+                  <th>Description</th>
+                  <th style="text-align: right;">Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${breakdown.stackable_codes.map(code => `
+                  <tr>
+                    <td><a href="#" class="hs-code-link">${code.hs_code}</a></td>
+                    <td>${code.description}</td>
+                    <td class="rate-cell">${code.rate}%</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="breakdown-summary">
+              <div class="summary-row">
+                <span class="summary-label">Total Combined Rate:</span>
+                <span class="summary-amount total-rate">${breakdown.total_rate}%</span>
+              </div>
+              <div class="summary-row">
+                <span class="summary-label">Applied to Line Value (${currencySymbol}${convertCurrency(breakdown.line_value, 'USD', calculation_currency).toFixed(2)}):</span>
+                <span class="summary-amount duty-amount">${currencySymbol}${convertCurrency(breakdown.duty_amount, 'USD', calculation_currency).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
   `;
 
   debugContainer.innerHTML = json.debug ?
-    `<details style="background: var(--av-color-gray-50); padding: 0.75rem; border-radius: 4px; margin-top: 0.75rem; border: 1px solid var(--av-color-gray-200);">
-      <summary style="cursor: pointer; font-weight: 600; color: var(--av-color-primary); font-size: 0.85rem;">Debug Information</summary>
-      <pre style="margin-top: 0.75rem; font-size: 0.75rem; white-space: pre-wrap;">${json.debug}</pre>
+    `<details style="background: #f5f7fa; padding: 1.5rem; border-radius: 12px; margin-top: 1rem; border: 1px solid #E5E7EB;">
+      <summary style="cursor: pointer; font-weight: 600; color: #004459;">Debug Information</summary>
+      <pre style="margin-top: 1rem; font-size: 0.85rem; white-space: pre-wrap; color: #374151;">${json.debug}</pre>
     </details>` : "";
 }
 </script>
